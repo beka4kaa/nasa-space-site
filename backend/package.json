@@ -1,0 +1,5 @@
+{
+  "name": "nasa-hackathon-backend",
+  "description": "FastAPI backend for NASA Hackathon Astronautics Data Portal",
+  "version": "1.0.0"
+}
