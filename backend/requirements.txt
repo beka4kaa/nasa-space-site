@@ -5,3 +5,7 @@ python-multipart
 openpyxl
 xlrd
 chardet
+numpy
+scikit-learn
+xgboost
+requests
