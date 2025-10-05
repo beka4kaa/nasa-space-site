@@ -455,28 +455,42 @@ def get_model_info():
 
 @app.get("/api/kepler/dataset/sample")
 def download_sample_dataset():
-    """Download a sample Kepler dataset for testing"""
+    """Download the complete Kepler dataset"""
     try:
-        # Path to the dataset
-        dataset_path = os.path.join(os.path.dirname(__file__), "datasets", "koi.csv")
+        # Path to the full dataset
+        dataset_path = os.path.join(os.path.dirname(__file__), "datasets", "NewKepler_full.xls")
         
         if not os.path.exists(dataset_path):
-            raise HTTPException(status_code=404, detail="Sample dataset not found")
+            # Fallback to old CSV sample if full dataset not found
+            fallback_path = os.path.join(os.path.dirname(__file__), "datasets", "koi.csv")
+            if os.path.exists(fallback_path):
+                df = pd.read_csv(fallback_path, comment='#')
+                sample_df = df.head(100)
+                csv_content = sample_df.to_csv(index=False)
+                return StreamingResponse(
+                    io.StringIO(csv_content),
+                    media_type="text/csv",
+                    headers={
+                        "Content-Disposition": "attachment; filename=kepler_sample_dataset.csv",
+                        "Content-Description": "NASA Kepler Objects of Interest Sample Dataset"
+                    }
+                )
+            else:
+                raise HTTPException(status_code=404, detail="Dataset not found")
         
-        # Read the dataset and create a smaller sample (first 100 rows + header)
-        df = pd.read_csv(dataset_path, comment='#')
-        sample_df = df.head(100)  # Take first 100 rows
+        # Read the full dataset (it's actually CSV with .xls extension)
+        df = pd.read_csv(dataset_path)
         
-        # Create CSV content
-        csv_content = sample_df.to_csv(index=False)
+        # Create CSV content from the full dataset
+        csv_content = df.to_csv(index=False)
         
         # Return as downloadable file
         return StreamingResponse(
             io.StringIO(csv_content),
             media_type="text/csv",
             headers={
-                "Content-Disposition": "attachment; filename=kepler_sample_dataset.csv",
-                "Content-Description": "NASA Kepler Objects of Interest Sample Dataset"
+                "Content-Disposition": "attachment; filename=kepler_full_dataset.csv",
+                "Content-Description": "NASA Kepler Objects of Interest Complete Dataset"
             }
         )
         
