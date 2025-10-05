@@ -162,24 +162,28 @@ health_check() {
 
 # Docker deployment
 deploy_docker() {
-    log_header "🐳 Docker Deployment"
+    log_header "🐳 Docker Deployment (Backend Only)"
     
-    log_info "Building Docker image..."
-    docker build -t nasa-koi-backend -f backend/Dockerfile backend/
+    log_info "Stopping any existing containers..."
+    docker-compose -f docker-compose.backend.yml down 2>/dev/null || true
     
-    log_info "Stopping existing container..."
-    docker stop nasa-koi-backend 2>/dev/null || true
-    docker rm nasa-koi-backend 2>/dev/null || true
+    log_info "Building and starting backend container..."
+    docker-compose -f docker-compose.backend.yml up --build -d
     
-    log_info "Starting new container..."
-    docker run -d \
-        --name nasa-koi-backend \
-        -p 8001:8001 \
-        -v $(pwd)/backend/uploads:/app/uploads \
-        nasa-koi-backend
+    log_success "Backend container started"
+    log_info "Waiting for backend to be ready..."
+    sleep 10
     
-    log_success "Docker container started"
-    sleep 5
+    # Wait for health check
+    for i in {1..30}; do
+        if curl -f http://localhost:8001/ping >/dev/null 2>&1; then
+            log_success "Backend is healthy!"
+            break
+        fi
+        log_info "Waiting for backend... ($i/30)"
+        sleep 2
+    done
+    
     health_check
 }
 
