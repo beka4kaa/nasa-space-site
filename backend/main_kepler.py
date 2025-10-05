@@ -65,14 +65,12 @@ def get_predictor():
 
 # Pydantic models
 class PredictionResponse(BaseModel):
-    model_config = {"protected_namespaces": ()}
-    
     success: bool
     predictions: List[str]
     probabilities: List[List[float]]
     summary: Dict[str, Any]
     total: int
-    model_metadata: Dict[str, Any]
+    model_info: Dict[str, Any]
 
 class ValidationResponse(BaseModel):
     success: bool
@@ -128,10 +126,7 @@ async def upload_csv(file: UploadFile = File(...)):
             encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
             df = pd.read_csv(io.BytesIO(content), encoding=encoding)
         else:  # Excel files
-            try:
-                df = pd.read_excel(io.BytesIO(content), engine='openpyxl')
-            except:
-                df = pd.read_excel(io.BytesIO(content), engine='xlrd')
+            df = pd.read_excel(io.BytesIO(content))
         
         # Save file for later use
         file_path = os.path.join(UPLOAD_DIR, file.filename)
@@ -248,7 +243,7 @@ async def predict_dataset(file: UploadFile = File(...)):
             probabilities=result.get('probabilities', []),
             summary=summary,
             total=len(predictions),
-            model_metadata={
+            model_info={
                 "accuracy": getattr(predictor, 'accuracy', 0.91),
                 "model_type": "Kepler Mission Analysis",
                 "features_count": len(predictor.feature_names)

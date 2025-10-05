@@ -1,8 +1,18 @@
 // API configuration and utilities
 // frontend/lib/api.js
 
+// Get API URL from environment variables
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION || 'v1';
+
+// Debug logging for development
+if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+  console.log('🔧 API Configuration:', {
+    API_BASE_URL,
+    API_VERSION,
+    NODE_ENV: process.env.NODE_ENV
+  });
+}
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -13,16 +23,15 @@ export const API_ENDPOINTS = {
   upload: `${API_BASE_URL}/upload`,
   download: (filename) => `${API_BASE_URL}/download/${filename}`,
   
-  // KOI API endpoints
-  validateDataset: `${API_BASE_URL}/api/koi/validate-dataset`,
-  predict: `${API_BASE_URL}/api/koi/predict`,
-  predictSingle: `${API_BASE_URL}/api/koi/predict-single`,
-  modelInfo: `${API_BASE_URL}/api/koi/model-info`,
+  // Kepler API endpoints
+  validateDataset: `${API_BASE_URL}/api/kepler/validate-dataset`,
+  predict: `${API_BASE_URL}/api/kepler/predict`,
+  modelInfo: `${API_BASE_URL}/api/kepler/model-info`,
 };
 
 // Default axios configuration
 export const API_CONFIG = {
-  timeout: 30000, // 30 seconds
+  timeout: parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT) || 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -33,7 +42,7 @@ export const FILE_UPLOAD_CONFIG = {
   headers: {
     'Content-Type': 'multipart/form-data',
   },
-  timeout: 120000, // 2 minutes for file uploads
+  timeout: parseInt(process.env.NEXT_PUBLIC_PREDICTION_TIMEOUT) || 120000,
 };
 
 // API utility functions
@@ -70,8 +79,10 @@ export const apiUtils = {
   // Validate file before upload
   validateFile: (file) => {
     const allowedTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
-    const allowedExtensions = ['.csv', '.xls', '.xlsx'];
-    const maxSize = 100 * 1024 * 1024; // 100MB
+    const allowedExtensions = process.env.NEXT_PUBLIC_ALLOWED_EXTENSIONS 
+      ? process.env.NEXT_PUBLIC_ALLOWED_EXTENSIONS.split(',').map(ext => `.${ext.trim()}`)
+      : ['.csv', '.xls', '.xlsx'];
+    const maxSize = parseInt(process.env.NEXT_PUBLIC_MAX_FILE_SIZE) || (100 * 1024 * 1024); // Default 100MB
 
     if (!file) {
       throw new Error('No file selected');
