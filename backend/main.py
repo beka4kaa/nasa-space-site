@@ -8,7 +8,7 @@ import io
 import chardet
 from typing import Dict, Any
 from pydantic import BaseModel
-from model_utils import get_model, KOIModelPredictor
+from model_utils_working import get_model, KOIModelPredictor
 
 app = FastAPI()
 
@@ -180,10 +180,10 @@ async def predict_koi_dataset(file: UploadFile = File(...)):
     """
     try:
         # Validate file type
-        if not file.filename.endswith('.csv'):
+        if not (file.filename.endswith('.csv') or file.filename.endswith('.xls') or file.filename.endswith('.xlsx')):
             raise HTTPException(
                 status_code=400, 
-                detail="Only CSV files are supported for KOI predictions"
+                detail="Only CSV, XLS, and XLSX files are supported for KOI predictions"
             )
         
         # Read file content
@@ -191,20 +191,31 @@ async def predict_koi_dataset(file: UploadFile = File(...)):
         if not content:
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
         
-        # Parse CSV
+        # Parse file with format detection
         try:
-            df = pd.read_csv(io.BytesIO(content))
-        except Exception as e:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Failed to parse CSV file: {str(e)}"
-            )
+            # First try as CSV (most common case)
+            detected = chardet.detect(content)
+            encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
+            df = pd.read_csv(io.BytesIO(content), encoding=encoding)
+        except Exception:
+            try:
+                # If CSV fails, try as Excel XLS
+                df = pd.read_excel(io.BytesIO(content), engine='xlrd')
+            except Exception:
+                try:
+                    # If XLS fails, try as Excel XLSX
+                    df = pd.read_excel(io.BytesIO(content), engine='openpyxl')
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Unable to read file format. Please ensure the file is a valid CSV, XLS, or XLSX file. Error: {str(e)}"
+                    )
         
         # Validate data
         if df.empty:
             raise HTTPException(
                 status_code=400, 
-                detail="CSV file contains no data"
+                detail="File contains no data"
             )
         
         # Load model and make predictions
@@ -212,9 +223,12 @@ async def predict_koi_dataset(file: UploadFile = File(...)):
             model = get_model()
             predictions = model.predict(df)
             
+            # Add total_samples to the predictions data
+            predictions['total_samples'] = len(df)
+            
             return PredictionResponse(
                 success=True,
-                message=f"Successfully predicted {predictions['total_samples']} samples",
+                message=f"Successfully predicted {len(df)} samples",
                 data=predictions
             )
         
@@ -252,7 +266,10 @@ async def predict_koi_single(request: PredictionRequest):
     try:
         # Load model and make prediction
         model = get_model()
-        prediction = model.predict_single(request.features)
+        
+        # Convert features dict to DataFrame
+        df = pd.DataFrame([request.features])
+        prediction = model.predict(df)
         
         if prediction is None:
             raise HTTPException(
@@ -260,10 +277,19 @@ async def predict_koi_single(request: PredictionRequest):
                 detail="Failed to generate prediction"
             )
         
+        # Format single prediction result
+        single_result = {
+            'prediction': prediction['predictions'][0],
+            'probabilities': prediction['probabilities'][0],
+            'confidence': max(prediction['probabilities'][0]),
+            'model_accuracy': prediction['model_accuracy'],
+            'feature_count': prediction['feature_count']
+        }
+        
         return PredictionResponse(
             success=True,
             message="Prediction successful",
-            data=prediction
+            data=single_result
         )
     
     except HTTPException:
@@ -307,20 +333,39 @@ async def validate_koi_dataset(file: UploadFile = File(...)):
     Validate if uploaded dataset is suitable for KOI prediction
     
     Args:
-        file: CSV file to validate
+        file: CSV, XLS, or XLSX file to validate
     
     Returns:
         Validation results with missing/extra columns
     """
     try:
-        if not file.filename.endswith('.csv'):
+        if not (file.filename.endswith('.csv') or file.filename.endswith('.xls') or file.filename.endswith('.xlsx')):
             raise HTTPException(
                 status_code=400,
-                detail="Only CSV files are supported"
+                detail="Only CSV, XLS, and XLSX files are supported"
             )
         
         content = await file.read()
-        df = pd.read_csv(io.BytesIO(content))
+        
+        # Try to detect actual file format by content, not just extension
+        try:
+            # First try as CSV (most common case)
+            detected = chardet.detect(content)
+            encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
+            df = pd.read_csv(io.BytesIO(content), encoding=encoding)
+        except Exception:
+            try:
+                # If CSV fails, try as Excel XLS
+                df = pd.read_excel(io.BytesIO(content), engine='xlrd')
+            except Exception:
+                try:
+                    # If XLS fails, try as Excel XLSX
+                    df = pd.read_excel(io.BytesIO(content), engine='openpyxl')
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Unable to read file format. Please ensure the file is a valid CSV, XLS, or XLSX file. Error: {str(e)}"
+                    )
         
         if df.empty:
             raise HTTPException(status_code=400, detail="CSV file is empty")

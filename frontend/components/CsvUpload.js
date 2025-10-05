@@ -37,8 +37,10 @@ export default function CsvUpload() {
       setError('Please select a file.');
       return;
     }
-    if (!file.name.endsWith('.csv')) {
-      setError('Only CSV files are supported for KOI analysis.');
+    const allowedExtensions = ['.csv', '.xls', '.xlsx'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    if (!allowedExtensions.includes(fileExtension)) {
+      setError('Only CSV, XLS, and XLSX files are supported for KOI analysis.');
       return;
     }
     
@@ -54,7 +56,7 @@ export default function CsvUpload() {
       // Валидация датасета перед предсказанием
       setLoadingMessage('Validating dataset structure...');
       try {
-        await axios.post('http://localhost:8000/api/koi/validate-dataset', formData, {
+        await axios.post('http://localhost:8001/api/koi/validate-dataset', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } catch (validationErr) {
@@ -63,7 +65,7 @@ export default function CsvUpload() {
             status: 400,
             data: {
               detail: validationErr.response?.data?.detail || 
-                     'Invalid CSV format. Please ensure the file is properly formatted and contains the required KOI columns.'
+                     'Invalid file format. Please ensure the file (CSV/XLS/XLSX) is properly formatted and contains the required KOI columns.'
             }
           }
         };
@@ -71,7 +73,7 @@ export default function CsvUpload() {
       
       // Теперь отправляем на endpoint предсказаний
       setLoadingMessage('Running AI model predictions...');
-      const predictRes = await axios.post('http://localhost:8000/api/koi/predict', formData, {
+      const predictRes = await axios.post('http://localhost:8001/api/koi/predict', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       
@@ -96,7 +98,7 @@ export default function CsvUpload() {
         
         // Улучшенные сообщения об ошибках
         if (errorMessage.includes('tokenizing') || errorMessage.includes('C error')) {
-          errorMessage = 'CSV file format is invalid. The file may be corrupted or have inconsistent columns. Please check that:\n• All rows have the same number of columns\n• No extra commas or line breaks in data\n• File encoding is UTF-8';
+          errorMessage = 'File format is invalid. The file may be corrupted or have inconsistent columns. Please check that:\n• All rows have the same number of columns\n• No extra commas or line breaks in data (for CSV)\n• File is not password protected (for XLS/XLSX)\n• File encoding is UTF-8 (for CSV)';
         } else if (errorMessage.includes('required columns')) {
           errorMessage = 'Dataset is missing required KOI columns. Please use the official Kepler KOI dataset.';
         }
@@ -111,7 +113,7 @@ export default function CsvUpload() {
   const handleDownload = () => {
     if (!filename) return;
     axios({
-      url: `http://localhost:8000/download/${filename}`,
+      url: `http://localhost:8001/download/${filename}`,
       method: 'GET',
       responseType: 'blob',
     }).then((res) => {
@@ -152,7 +154,7 @@ export default function CsvUpload() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
-          <p className="font-medium mb-1">CSV Requirements:</p>
+          <p className="font-medium mb-1">File Requirements:</p>
           <p>• File must be properly formatted with consistent columns</p>
           <p>• Use UTF-8 encoding</p>
           <p>• Compatible with Kepler KOI dataset format</p>
