@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
   // Kepler API endpoints
   validateDataset: `${API_BASE_URL}/api/kepler/validate-dataset`,
   predict: `${API_BASE_URL}/api/kepler/predict`,
+  predictPaginated: `${API_BASE_URL}/api/kepler/predict-paginated`,
   modelInfo: `${API_BASE_URL}/api/kepler/model-info`,
 };
 

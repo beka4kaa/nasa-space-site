@@ -229,6 +229,8 @@ export default function Analytics() {
   const [predictions, setPredictions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   useEffect(() => {
     // Get predictions from sessionStorage
@@ -441,25 +443,101 @@ export default function Analytics() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {predictionList.slice(0, 50).map((prediction, index) => (
-                <PredictionCard
-                  key={index}
-                  prediction={prediction}
-                  index={index}
-                  total={total_samples}
-                  probabilities={predictionData?.probabilities}
-                />
-              ))}
+            {/* Pagination Controls */}
+            <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium">Show:</label>
+                  <select 
+                    value={pageSize} 
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border rounded px-2 py-1 text-sm"
+                  >
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={200}>200</option>
+                  </select>
+                  <span className="text-sm text-muted-foreground">per page</span>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, predictionList.length)} of {predictionList.length} predictions
+                </div>
+              </div>
+              
+              {Math.ceil(predictionList.length / pageSize) > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.ceil(predictionList.length / pageSize) }, (_, i) => i + 1)
+                      .filter(page => {
+                        const totalPages = Math.ceil(predictionList.length / pageSize);
+                        if (totalPages <= 7) return true;
+                        if (page === 1 || page === totalPages) return true;
+                        if (Math.abs(page - currentPage) <= 2) return true;
+                        return false;
+                      })
+                      .map((page, index, array) => {
+                        const prevPage = array[index - 1];
+                        const showEllipsis = prevPage && page - prevPage > 1;
+                        
+                        return (
+                          <React.Fragment key={page}>
+                            {showEllipsis && <span className="px-2 text-muted-foreground">...</span>}
+                            <button
+                              onClick={() => setCurrentPage(page)}
+                              className={`px-3 py-1 border rounded text-sm ${
+                                currentPage === page 
+                                  ? 'bg-primary text-primary-foreground' 
+                                  : 'hover:bg-muted'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          </React.Fragment>
+                        );
+                      })
+                    }
+                  </div>
+                  
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(Math.ceil(predictionList.length / pageSize), prev + 1))}
+                    disabled={currentPage === Math.ceil(predictionList.length / pageSize)}
+                    className="px-3 py-1 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
 
-            {predictionList.length > 50 && (
-              <div className="mt-8 text-center">
-                <p className="text-muted-foreground">
-                  Showing 50 of {predictionList.length} predictions
-                </p>
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {predictionList
+                .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                .map((prediction, index) => {
+                  const actualIndex = (currentPage - 1) * pageSize + index;
+                  return (
+                    <PredictionCard
+                      key={actualIndex}
+                      prediction={prediction}
+                      index={actualIndex}
+                      total={total_samples}
+                      probabilities={predictionData?.probabilities}
+                    />
+                  );
+                })
+              }
+            </div>
           </div>
         </section>
       </div>

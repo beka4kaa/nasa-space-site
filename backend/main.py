@@ -82,6 +82,21 @@ class ValidationResponse(BaseModel):
     total_columns: int
     sample_columns: List[str]
 
+class PaginatedPredictionResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
+    
+    success: bool
+    predictions: List[str]
+    probabilities: List[List[float]]
+    summary: Dict[str, Any]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+    has_next: bool
+    has_prev: bool
+    model_metadata: Dict[str, Any]
+
 # ============= BASIC ENDPOINTS =============
 
 @app.get("/ping")
@@ -101,6 +116,7 @@ def root():
             "upload": "/upload",
             "download": "/download/{filename}",
             "predict": "/api/kepler/predict",
+            "predict_paginated": "/api/kepler/predict-paginated",
             "predict_single": "/api/kepler/predict-single",
             "validate": "/api/kepler/validate-dataset",
             "model_info": "/api/kepler/model-info",
@@ -365,6 +381,135 @@ async def predict_dataset(file: UploadFile = File(...)):
             probabilities=result.get('probabilities', []),
             summary=summary,
             total=len(predictions),
+            model_metadata={
+                "accuracy": getattr(predictor, 'accuracy', 0.91),
+                "model_type": "Kepler Mission Analysis",
+                "features_count": len(predictor.feature_names)
+            }
+        )
+    
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions as-is
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Invalid file format. Please ensure the file (CSV/XLS/XLSX) is properly formatted and contains the required KOI columns. Error: {str(e)}"
+        )
+
+@app.post("/api/kepler/predict-paginated", response_model=PaginatedPredictionResponse)
+async def predict_dataset_paginated(
+    file: UploadFile = File(...),
+    page: int = 1,
+    page_size: int = 50
+):
+    """Run Kepler model predictions on uploaded dataset with pagination"""
+    try:
+        # Validate pagination parameters
+        if page < 1:
+            page = 1
+        if page_size < 1 or page_size > 1000:
+            page_size = 50
+            
+        # Check file extension first
+        if not any(file.filename.lower().endswith(f'.{ext}') for ext in ALLOWED_EXTENSIONS):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file format. Please ensure the file (CSV/XLS/XLSX) is properly formatted and contains the required KOI columns."
+            )
+        
+        content = await file.read()
+        if not content:
+            raise HTTPException(
+                status_code=400,
+                detail="Uploaded file is empty. Please upload a valid CSV/XLS/XLSX file with KOI data."
+            )
+        
+        # Try to read file with multiple approaches - smart format detection
+        df = None
+        file_errors = []
+        
+        # First, try to detect format by content, not just extension
+        detected = chardet.detect(content)
+        encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
+        
+        # Try CSV parsing first (works for most data files regardless of extension)
+        try:
+            # Try reading CSV with comment handling for NASA data files
+            try:
+                df = pd.read_csv(io.BytesIO(content), encoding=encoding, comment='#')
+            except:
+                # Fallback to regular CSV reading
+                df = pd.read_csv(io.BytesIO(content), encoding=encoding)
+        except Exception as e:
+            file_errors.append(f"CSV parsing attempt: {str(e)}")
+        
+        # If CSV failed, try Excel formats
+        if df is None:
+            # Try different Excel engines regardless of extension
+            for engine in ['openpyxl', 'xlrd']:
+                try:
+                    df = pd.read_excel(io.BytesIO(content), engine=engine)
+                    break
+                except Exception as e:
+                    file_errors.append(f"{engine} attempt: {str(e)}")
+        
+        if df is None or df.empty:
+            error_details = "; ".join(file_errors) if file_errors else "Unknown error"
+            raise HTTPException(
+                status_code=400,
+                detail=f"Could not parse file. Tried multiple formats. Errors: {error_details}. Please ensure the file (CSV/XLS/XLSX) is properly formatted and contains the required KOI columns."
+            )
+        
+        # Get predictor and validate required features
+        predictor = get_predictor()
+        required_features = predictor.feature_names
+        
+        # Check for required columns
+        missing_features = [f for f in required_features if f not in df.columns]
+        if missing_features:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Dataset is missing {len(missing_features)} required KOI columns: {missing_features[:10]}{'...' if len(missing_features) > 10 else ''}. Please ensure your file contains NASA Kepler Objects of Interest (KOI) data with all required astronomical measurements."
+            )
+        
+        # Get predictions for ALL data
+        result = predictor.predict(df)
+        all_predictions = result['predictions']
+        all_probabilities = result.get('probabilities', [])
+        
+        # Calculate total pages
+        total_records = len(all_predictions)
+        total_pages = (total_records + page_size - 1) // page_size
+        
+        # Validate page number
+        if page > total_pages:
+            page = total_pages if total_pages > 0 else 1
+            
+        # Calculate slice indices for pagination
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        
+        # Get paginated data
+        paginated_predictions = all_predictions[start_idx:end_idx]
+        paginated_probabilities = all_probabilities[start_idx:end_idx] if all_probabilities else []
+        
+        # Calculate summary statistics for ALL data
+        summary = {
+            prediction_type: all_predictions.count(prediction_type) 
+            for prediction_type in set(all_predictions)
+        }
+        
+        return PaginatedPredictionResponse(
+            success=True,
+            predictions=paginated_predictions,
+            probabilities=paginated_probabilities,
+            summary=summary,
+            total=total_records,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages,
+            has_next=page < total_pages,
+            has_prev=page > 1,
             model_metadata={
                 "accuracy": getattr(predictor, 'accuracy', 0.91),
                 "model_type": "Kepler Mission Analysis",
