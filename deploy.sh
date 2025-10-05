@@ -1,6 +1,28 @@
 #!/bin/bash
 
-# NASA KOI Portal Deployment Script
+# NASA KOI Portal Deployment Scr# Set deployment mode and scope
+DEPLOYMENT_MODE=${1:-"development"}
+DEPLOYMENT_SCOPE=${2:-"full"}
+
+log_info "Deployment mode: $DEPLOYMENT_MODE"
+log_info "Deployment scope: $DEPLOYMENT_SCOPE"
+
+# Choose compose file based on scope
+if [ "$DEPLOYMENT_SCOPE" = "backend" ]; then
+    COMPOSE_FILE="docker-compose.backend.yml"
+    log_info "🎯 BACKEND ONLY deployment selected"
+else
+    COMPOSE_FILE="docker-compose.yml"
+    log_info "🌐 FULL STACK deployment selected"
+fi
+
+# Environment file setup
+if [ "$DEPLOYMENT_MODE" = "production" ]; then
+    ENV_FILE=".env.production"
+else
+    ENV_FILE=".env"
+fie: ./deploy.sh [development|production] [backend|full]
+
 set -e
 
 echo "🚀 Starting NASA KOI Portal Deployment..."
@@ -73,12 +95,18 @@ if [ ! -f "backend/models/simple_test_model.pkl" ]; then
     log_warning "Model file not found. The application will create it on first run."
 fi
 
+# Handle conflicting root .env for backend-only deployments
+if [ "$DEPLOYMENT_SCOPE" = "backend" ] && [ -f ".env" ]; then
+    log_warning "Moving conflicting root .env to prevent backend issues"
+    mv .env .env.backup.$(date +%s)
+fi
+
 # Build and start services
 log_info "Building Docker images..."
-docker-compose build --no-cache
+docker-compose -f "$COMPOSE_FILE" build --no-cache
 
 log_info "Starting services..."
-docker-compose up -d
+docker-compose -f "$COMPOSE_FILE" up -d
 
 # Wait for services to be healthy
 log_info "Waiting for services to be healthy..."
@@ -92,35 +120,45 @@ if curl -f http://localhost:8001/ping > /dev/null 2>&1; then
     log_success "Backend is healthy ✓"
 else
     log_error "Backend health check failed ✗"
-    docker-compose logs backend
+    docker-compose -f "$COMPOSE_FILE" logs backend
     exit 1
 fi
 
-# Check frontend
-if curl -f http://localhost:3000 > /dev/null 2>&1; then
-    log_success "Frontend is healthy ✓"
-else
-    log_error "Frontend health check failed ✗"
-    docker-compose logs frontend
-    exit 1
+# Check frontend only for full stack deployments
+if [ "$DEPLOYMENT_SCOPE" = "full" ]; then
+    if curl -f http://localhost:3000 > /dev/null 2>&1; then
+        log_success "Frontend is healthy ✓"
+    else
+        log_error "Frontend health check failed ✗"
+        docker-compose -f "$COMPOSE_FILE" logs frontend
+        exit 1
+    fi
 fi
 
 # Display status
-log_success "🎉 NASA KOI Portal deployed successfully!"
+if [ "$DEPLOYMENT_SCOPE" = "backend" ]; then
+    log_success "🎉 NASA KOI Portal Backend deployed successfully!"
+else
+    log_success "🎉 NASA KOI Portal deployed successfully!"
+fi
+
 echo ""
 echo "📊 Service Status:"
-docker-compose ps
+docker-compose -f "$COMPOSE_FILE" ps
 echo ""
 echo "🌐 Access URLs:"
-echo "  Frontend: http://localhost:3000"
+if [ "$DEPLOYMENT_SCOPE" = "full" ]; then
+    echo "  Frontend: http://localhost:3000"
+fi
 echo "  Backend API: http://localhost:8001"
 echo "  API Documentation: http://localhost:8001/docs"
+echo "  Health Check: http://localhost:8001/ping"
 echo ""
 echo "📋 Useful Commands:"
-echo "  View logs: docker-compose logs -f"
-echo "  Stop services: docker-compose down"
-echo "  Restart services: docker-compose restart"
-echo "  Update services: docker-compose up -d --build"
+echo "  View logs: docker-compose -f $COMPOSE_FILE logs -f"
+echo "  Stop services: docker-compose -f $COMPOSE_FILE down"
+echo "  Restart services: docker-compose -f $COMPOSE_FILE restart"
+echo "  Update services: docker-compose -f $COMPOSE_FILE up -d --build"
 echo ""
 
 # Show resource usage
