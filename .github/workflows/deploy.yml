@@ -1,4 +1,4 @@
-name: Build and Deploy NASA KOI Portal
+name: Build and Deploy NASA KOI Portal Backend
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ main ]
 
 env:
-  NODE_VERSION: '20'
   PYTHON_VERSION: '3.11'
+  BACKEND_ONLY: true
 
 jobs:
   test-backend:
@@ -54,45 +54,12 @@ jobs:
         print('✅ Backend health check passed')
         "
 
-  test-frontend:
-    name: Test Frontend
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-    
-    - name: Install dependencies
-      run: |
-        cd frontend
-        npm ci
-    
-    - name: Run linting
-      run: |
-        cd frontend
-        npm run lint || echo "Linting completed with warnings"
-    
-    - name: Build application
-      run: |
-        cd frontend
-        npm run build
-    
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: frontend-build
-        path: frontend/.next
+  # Frontend testing removed - Backend only deployment
 
   build-docker:
-    name: Build Docker Image
+    name: Build Backend Docker Image
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend]
+    needs: [test-backend]
     if: github.ref == 'refs/heads/main'
     
     steps:
@@ -119,10 +86,11 @@ jobs:
           type=sha,prefix=commit-
           type=raw,value=latest,enable={{is_default_branch}}
     
-    - name: Build and push Docker image
+    - name: Build and push Backend Docker image
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: ./backend
+        file: ./backend/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
@@ -145,28 +113,27 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          # Pull latest image
+          # Pull latest backend image
           docker pull ${{ secrets.DOCKER_USERNAME }}/nasa-koi-portal:latest
           
-          # Stop existing container
-          docker stop nasa-koi-portal || true
-          docker rm nasa-koi-portal || true
+          # Stop existing containers
+          docker stop nasa-koi-backend || true
+          docker rm nasa-koi-backend || true
           
-          # Run new container
+          # Run new backend container
           docker run -d \
-            --name nasa-koi-portal \
+            --name nasa-koi-backend \
             --restart unless-stopped \
-            -p 3000:3000 \
-            -p 8000:8000 \
-            -v /var/nasa-data:/app/data \
+            -p 8001:8001 \
+            -v /var/nasa-data:/app/uploads \
+            -v /var/nasa-models:/app/models \
             ${{ secrets.DOCKER_USERNAME }}/nasa-koi-portal:latest
           
-          # Health check
+          # Health check (backend only)
           sleep 30
-          curl -f http://localhost:8000/health || exit 1
-          curl -f http://localhost:3000 || exit 1
+          curl -f http://localhost:8001/ping || exit 1
           
-          echo "✅ Deployment successful!"
+          echo "✅ Backend deployment successful!"
 
   notify:
     name: Notify Deployment Status
@@ -178,9 +145,9 @@ jobs:
     - name: Notify success
       if: needs.deploy.result == 'success'
       run: |
-        echo "🚀 NASA KOI Portal deployed successfully!"
-        echo "Frontend: https://your-domain.com"
-        echo "API: https://your-domain.com/api"
+        echo "🚀 NASA KOI Portal Backend deployed successfully!"
+        echo "API: https://your-domain.com:8001"
+        echo "Docs: https://your-domain.com:8001/docs"
     
     - name: Notify failure
       if: needs.deploy.result == 'failure'
