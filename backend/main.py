@@ -103,7 +103,8 @@ def root():
             "predict": "/api/kepler/predict",
             "predict_single": "/api/kepler/predict-single",
             "validate": "/api/kepler/validate-dataset",
-            "model_info": "/api/kepler/model-info"
+            "model_info": "/api/kepler/model-info",
+            "sample_dataset": "/api/kepler/dataset/sample"
         }
     }
 
@@ -451,6 +452,36 @@ def get_model_info():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get model info: {str(e)}")
+
+@app.get("/api/kepler/dataset/sample")
+def download_sample_dataset():
+    """Download a sample Kepler dataset for testing"""
+    try:
+        # Path to the dataset
+        dataset_path = os.path.join(os.path.dirname(__file__), "datasets", "koi.csv")
+        
+        if not os.path.exists(dataset_path):
+            raise HTTPException(status_code=404, detail="Sample dataset not found")
+        
+        # Read the dataset and create a smaller sample (first 100 rows + header)
+        df = pd.read_csv(dataset_path, comment='#')
+        sample_df = df.head(100)  # Take first 100 rows
+        
+        # Create CSV content
+        csv_content = sample_df.to_csv(index=False)
+        
+        # Return as downloadable file
+        return StreamingResponse(
+            io.StringIO(csv_content),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": "attachment; filename=kepler_sample_dataset.csv",
+                "Content-Description": "NASA Kepler Objects of Interest Sample Dataset"
+            }
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to download sample dataset: {str(e)}")
 
 # ============= STARTUP =============
 
