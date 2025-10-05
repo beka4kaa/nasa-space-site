@@ -181,13 +181,22 @@ async def validate_dataset(file: UploadFile = File(...)):
     try:
         content = await file.read()
         
-        # Read file
-        if file.filename.endswith('.csv'):
+        # Detect file format based on content, not extension
+        try:
+            # Try CSV first (most common and faster)
             detected = chardet.detect(content)
             encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
             df = pd.read_csv(io.BytesIO(content), encoding=encoding)
-        else:
-            df = pd.read_excel(io.BytesIO(content))
+        except:
+            # If CSV fails, try Excel
+            try:
+                df = pd.read_excel(io.BytesIO(content))
+            except:
+                # Try Excel with different engines
+                try:
+                    df = pd.read_excel(io.BytesIO(content), engine='openpyxl')
+                except:
+                    df = pd.read_excel(io.BytesIO(content), engine='xlrd')
         
         # Get model and check required features
         predictor = get_predictor()
@@ -223,13 +232,22 @@ async def predict_dataset(file: UploadFile = File(...)):
     try:
         content = await file.read()
         
-        # Read file
-        if file.filename.endswith('.csv'):
+        # Detect file format based on content, not extension
+        try:
+            # Try CSV first (most common and faster)
             detected = chardet.detect(content)
             encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
             df = pd.read_csv(io.BytesIO(content), encoding=encoding)
-        else:
-            df = pd.read_excel(io.BytesIO(content))
+        except:
+            # If CSV fails, try Excel
+            try:
+                df = pd.read_excel(io.BytesIO(content))
+            except:
+                # Try Excel with different engines
+                try:
+                    df = pd.read_excel(io.BytesIO(content), engine='openpyxl')
+                except:
+                    df = pd.read_excel(io.BytesIO(content), engine='xlrd')
         
         # Get predictions
         predictor = get_predictor()
