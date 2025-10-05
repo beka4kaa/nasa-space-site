@@ -127,7 +127,12 @@ async def upload_csv(file: UploadFile = File(...)):
         if file.filename.endswith('.csv'):
             detected = chardet.detect(content)
             encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
-            df = pd.read_csv(io.BytesIO(content), encoding=encoding)
+            # Try reading CSV with comment handling for NASA data files
+            try:
+                df = pd.read_csv(io.BytesIO(content), encoding=encoding, comment='#')
+            except:
+                # Fallback to regular CSV reading
+                df = pd.read_csv(io.BytesIO(content), encoding=encoding)
         else:  # Excel files
             try:
                 df = pd.read_excel(io.BytesIO(content), engine='openpyxl')
@@ -203,7 +208,12 @@ async def validate_dataset(file: UploadFile = File(...)):
             try:
                 detected = chardet.detect(content)
                 encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
-                df = pd.read_csv(io.BytesIO(content), encoding=encoding)
+                # Try reading CSV with comment handling for NASA data files
+                try:
+                    df = pd.read_csv(io.BytesIO(content), encoding=encoding, comment='#')
+                except:
+                    # Fallback to regular CSV reading
+                    df = pd.read_csv(io.BytesIO(content), encoding=encoding)
             except Exception as e:
                 file_errors.append(f"CSV parsing error: {str(e)}")
         
@@ -294,7 +304,12 @@ async def predict_dataset(file: UploadFile = File(...)):
             try:
                 detected = chardet.detect(content)
                 encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
-                df = pd.read_csv(io.BytesIO(content), encoding=encoding)
+                # Try reading CSV with comment handling for NASA data files
+                try:
+                    df = pd.read_csv(io.BytesIO(content), encoding=encoding, comment='#')
+                except:
+                    # Fallback to regular CSV reading
+                    df = pd.read_csv(io.BytesIO(content), encoding=encoding)
             except Exception as e:
                 file_errors.append(f"CSV parsing error: {str(e)}")
         
