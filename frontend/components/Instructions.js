@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Download, FileText, Upload, BarChart3, CheckCircle, Info, ExternalLink, Telescope } from 'lucide-react';
+import { Download, Upload, BarChart3 } from 'lucide-react';
 import { API_ENDPOINTS } from '../lib/api';
 
 const Instructions = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('dataset');
 
   const handleDownloadDataset = () => {
     // Create a link to download the Kepler dataset
@@ -16,8 +16,7 @@ const Instructions = () => {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: Info },
-    { id: 'dataset', label: 'Sample Dataset', icon: Download },
+    { id: 'dataset', label: 'Kepler Dataset', icon: Download },
     { id: 'upload', label: 'How to Upload', icon: Upload },
     { id: 'results', label: 'Understanding Results', icon: BarChart3 },
   ];
@@ -57,46 +56,6 @@ const Instructions = () => {
 
         {/* Tab Content */}
         <div className="max-w-4xl mx-auto">
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-4 flex items-center">
-                  <Telescope className="w-5 h-5 mr-2 text-primary" />
-                  What is KOI Analysis?
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  Kepler Objects of Interest (KOI) are astronomical objects identified by NASA's Kepler mission as potential exoplanets. 
-                  Our AI system analyzes 19 different astronomical measurements to classify these objects as:
-                </p>
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                    <CheckCircle className="w-8 h-8 text-green-500 mb-2" />
-                    <h4 className="font-semibold text-green-500 mb-1">CONFIRMED</h4>
-                    <p className="text-sm text-muted-foreground">Verified exoplanets</p>
-                  </div>
-                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
-                    <FileText className="w-8 h-8 text-yellow-500 mb-2" />
-                    <h4 className="font-semibold text-yellow-500 mb-1">CANDIDATE</h4>
-                    <p className="text-sm text-muted-foreground">Potential exoplanets</p>
-                  </div>
-                  <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-                    <ExternalLink className="w-8 h-8 text-red-500 mb-2" />
-                    <h4 className="font-semibold text-red-500 mb-1">FALSE POSITIVE</h4>
-                    <p className="text-sm text-muted-foreground">Not actual planets</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-2 text-primary">Model Performance</h3>
-                <p className="text-muted-foreground">
-                  Our machine learning model achieves <strong>91% accuracy</strong> using NASA Kepler mission data, 
-                  trained on thousands of astronomical observations and measurements.
-                </p>
-              </div>
-            </div>
-          )}
-
           {activeTab === 'dataset' && (
             <div className="space-y-6">
               <div className="bg-card border rounded-lg p-6">
