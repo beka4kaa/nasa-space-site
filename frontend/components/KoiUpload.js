@@ -1,103 +1,59 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from './ui/card';
-import { Upload, CheckCircle2, FileText, Activity, AlertCircle, Download } from 'lucide-react';
+import { Upload, CheckCircle2, FileText, Activity, AlertCircle, Download, BarChart3 } from 'lucide-react';
 
 export default function KoiUpload() {
-  const [file, setFile] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState(null); // 'success', 'error', null
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      validateAndSetFile(droppedFile);
-    }
-  };
-
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      validateAndSetFile(selectedFile);
-    }
-  };
-
-  const validateAndSetFile = (selectedFile) => {
-    // Check file extension
-    const validExtensions = ['.csv', '.fits', '.txt', '.dat'];
-    const fileName = selectedFile.name.toLowerCase();
-    const isValid = validExtensions.some(ext => fileName.endsWith(ext));
-    
-    if (isValid) {
-      setFile(selectedFile);
-      setUploadStatus('success');
-    } else {
-      setFile(null);
-      setUploadStatus('error');
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const clearFile = () => {
-    setFile(null);
-    setUploadStatus(null);
-  };
+  // Component is disabled - no functionality needed
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-8" id="koi-upload">
       {/* Header Section */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-          <Activity className="h-8 w-8 text-primary" />
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/20 mb-4">
+          <Activity className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h2 className="text-3xl font-bold tracking-tight">KOI Light Curves Analysis</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-muted-foreground">KOI Light Curves Analysis</h2>
+        <div className="inline-flex items-center gap-2 rounded-full bg-yellow-500/10 border border-yellow-500/20 px-4 py-2 mb-4">
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+          <span className="text-sm font-medium text-yellow-500">Coming Soon - Feature Under Development</span>
+        </div>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Upload Kepler Object of Interest (KOI) light curve data for advanced exoplanet transit analysis
+          Advanced KOI light curve analysis will be available soon. Our team is working on implementing this feature.
         </p>
       </div>
 
-      {/* Info Cards */}
+      {/* Disabled Features Preview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
+        <Card className="border-muted/40 bg-muted/20 backdrop-blur-sm opacity-60">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <FileText className="h-5 w-5 text-primary mt-0.5" />
+              <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
-                <h4 className="font-semibold text-sm mb-1">Accepted Formats</h4>
+                <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Future: File Formats</h4>
                 <p className="text-xs text-muted-foreground">CSV, FITS, TXT, DAT</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
+        <Card className="border-muted/40 bg-muted/20 backdrop-blur-sm opacity-60">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <Activity className="h-5 w-5 text-primary mt-0.5" />
+              <Activity className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
-                <h4 className="font-semibold text-sm mb-1">Light Curve Data</h4>
+                <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Future: Light Curve Analysis</h4>
                 <p className="text-xs text-muted-foreground">Time series flux measurements</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
+        <Card className="border-muted/40 bg-muted/20 backdrop-blur-sm opacity-60">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="h-5 w-5 text-primary mt-0.5" />
+              <CheckCircle2 className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
-                <h4 className="font-semibold text-sm mb-1">Auto Detection</h4>
+                <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Future: Auto Detection</h4>
                 <p className="text-xs text-muted-foreground">Transit events & periodicity</p>
               </div>
             </div>
@@ -105,123 +61,68 @@ export default function KoiUpload() {
         </Card>
       </div>
 
-      {/* Upload Card */}
-      <Card className="overflow-hidden border-0 shadow-lg bg-card/50 backdrop-blur-sm">
+      {/* Disabled Upload Card */}
+      <Card className="overflow-hidden border-0 shadow-lg bg-muted/20 backdrop-blur-sm opacity-60">
         <CardContent className="p-8">
-          <div
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
-              isDragging
-                ? 'border-primary bg-primary/10 scale-[1.02]'
-                : file && uploadStatus === 'success'
-                ? 'border-green-500/50 bg-green-500/5 scale-[1.02]'
-                : uploadStatus === 'error'
-                ? 'border-red-500/50 bg-red-500/5'
-                : 'border-border/50 hover:border-primary/50 hover:bg-accent/5'
-            }`}
-          >
+          <div className="relative border-2 border-dashed border-muted rounded-2xl p-12 text-center">
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-5">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_rgba(255,255,255,0.15)_1px,_transparent_0)] bg-[length:20px_20px]"></div>
             </div>
             
             <div className="relative">
-              <div className={`mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full transition-all duration-300 ${
-                file && uploadStatus === 'success'
-                  ? 'bg-green-500 text-white'
-                  : uploadStatus === 'error'
-                  ? 'bg-red-500 text-white'
-                  : 'bg-muted text-muted-foreground'
-              }`}>
-                {file && uploadStatus === 'success' ? (
-                  <CheckCircle2 className="h-8 w-8" />
-                ) : uploadStatus === 'error' ? (
-                  <AlertCircle className="h-8 w-8" />
-                ) : (
-                  <Upload className="h-8 w-8" />
-                )}
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <AlertCircle className="h-8 w-8" />
               </div>
               
               <div className="space-y-3">
-                <h3 className="text-xl font-semibold">
-                  {file && uploadStatus === 'success' ? (
-                    <span className="flex items-center justify-center gap-2 text-green-500">
-                      <FileText className="h-5 w-5" />
-                      {file.name}
-                    </span>
-                  ) : uploadStatus === 'error' ? (
-                    <span className="text-red-500">Invalid File Format</span>
-                  ) : (
-                    'Drop your KOI light curve file here'
-                  )}
+                <h3 className="text-xl font-semibold text-muted-foreground">
+                  Feature Under Development
                 </h3>
-                <p className="text-muted-foreground">
-                  {file && uploadStatus === 'success' ? (
-                    `File size: ${(file.size / (1024 * 1024)).toFixed(2)} MB`
-                  ) : uploadStatus === 'error' ? (
-                    'Please upload CSV, FITS, TXT, or DAT files only'
-                  ) : (
-                    'Supports CSV, FITS, TXT, DAT files with time series data'
-                  )}
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  KOI light curve analysis functionality is currently being implemented. This feature will support advanced time series analysis for exoplanet transit detection.
                 </p>
               </div>
               
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                <label className="inline-flex items-center justify-center gap-2 rounded-lg border border-primary/20 bg-primary/10 px-5 py-2.5 text-sm font-medium text-foreground backdrop-blur-sm transition-all duration-300 hover:border-primary/40 hover:bg-primary/20 cursor-pointer">
+                <button 
+                  disabled 
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-muted bg-muted/20 px-5 py-2.5 text-sm font-medium text-muted-foreground cursor-not-allowed"
+                >
                   <Upload className="h-4 w-4" />
-                  <span>Browse Files</span>
-                  <input
-                    type="file"
-                    onChange={handleFileChange}
-                    accept=".csv,.fits,.txt,.dat"
-                    className="hidden"
-                  />
-                </label>
-                
-                {file && uploadStatus === 'success' && (
-                  <>
-                    <button
-                      onClick={clearFile}
-                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background/50 px-5 py-2.5 text-sm font-medium text-foreground backdrop-blur-sm transition-all duration-300 hover:bg-accent"
-                    >
-                      Clear
-                    </button>
-                    
-                    <button className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-5 py-2.5 text-sm font-medium text-green-500 backdrop-blur-sm transition-all duration-300 hover:border-green-500/40 hover:bg-green-500/20">
-                      <Activity className="h-4 w-4" />
-                      <span>Analyze Light Curve</span>
-                    </button>
-                  </>
-                )}
+                  <span>Upload Disabled</span>
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Additional Info */}
-          {file && uploadStatus === 'success' && (
-            <div className="mt-6 p-4 rounded-lg border border-primary/20 bg-primary/5">
-              <div className="flex items-start gap-3">
-                <Activity className="h-5 w-5 text-primary mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-sm mb-2">Ready for Analysis</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Your KOI light curve data is ready. Click "Analyze Light Curve" to detect transit events, 
-                    measure orbital periods, and identify potential exoplanet candidates.
-                  </p>
-                </div>
+          {/* Development Info */}
+          <div className="mt-6 p-4 rounded-lg border border-blue-500/20 bg-blue-500/5">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-semibold text-sm mb-2 text-blue-500">Development Status</h4>
+                <p className="text-xs text-muted-foreground">
+                  Our development team is actively working on implementing KOI light curve analysis capabilities. 
+                  This will include transit detection algorithms, period analysis, and automated exoplanet candidate identification.
+                </p>
               </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Sample Data Link */}
+      {/* Alternative Action */}
       <div className="text-center">
-        <button className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <Download className="h-4 w-4" />
-          <span>Download sample KOI light curve dataset</span>
+        <p className="text-sm text-muted-foreground mb-4">
+          In the meantime, use our KOI parameter analysis tool below for exoplanet classification
+        </p>
+        <button 
+          onClick={() => document.getElementById('upload')?.scrollIntoView({ behavior: 'smooth' })}
+          className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors border border-primary/20 rounded-lg px-4 py-2 bg-primary/10 hover:bg-primary/20"
+        >
+          <BarChart3 className="h-4 w-4" />
+          <span>Try KOI Parameter Analysis</span>
         </button>
       </div>
     </div>
