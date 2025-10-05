@@ -25,9 +25,9 @@ API_DESCRIPTION = os.getenv("API_DESCRIPTION", "NASA Kepler Objects Analysis Por
 
 # CORS settings
 try:
-    CORS_ORIGINS = json.loads(os.getenv("CORS_ORIGINS", '["http://localhost:3000"]'))
+    CORS_ORIGINS = json.loads(os.getenv("CORS_ORIGINS", '["http://localhost:3000", "https://nasa-space-site.vercel.app"]'))
 except:
-    CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", "https://nasa-space-site.vercel.app"]
 
 # File settings
 MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", "104857600"))  # 100MB
