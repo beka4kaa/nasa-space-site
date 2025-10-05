@@ -1,9 +1,19 @@
-# .dockerignore
-node_modules
-frontend/node_modules
-backend/__pycache__
+# .dockerignore - Backend Only Build
+# Completely ignore frontend
+frontend/
+node_modules/
+.next/
+
+# Ignore development files
+backend/__pycache__/
 *.pyc
-uploads
-.next
-.env
+*.log
+.env*
 .DS_Store
+.git/
+.vscode/
+*.md
+
+# Ignore uploads and cache
+uploads/
+cache/
