@@ -190,7 +190,8 @@ class KOIModelPredictor:
                 'CANDIDATE': sum(1 for r in results if r['prediction'] == 'CANDIDATE'),
                 'CONFIRMED': sum(1 for r in results if r['prediction'] == 'CONFIRMED'),
                 'FALSE_POSITIVE': sum(1 for r in results if r['prediction'] == 'FALSE POSITIVE')
-            }
+            },
+            'original_data': df.to_dict('records')  # Include original data for analytics
         }
     
     def predict_single(self, features_dict):

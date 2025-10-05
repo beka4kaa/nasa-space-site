@@ -1,9 +1,62 @@
-# .gitignore
+# NASA KOI Portal - .gitignore
+
+# Dependencies
 node_modules/
-frontend/node_modules/
-backend/__pycache__/
+__pycache__/
 *.pyc
-uploads/
-.next/
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environment variables
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Uploads and temporary files
+uploads/
+!uploads/.gitkeep
+models/*.json
+!models/.gitkeep
+*.csv
+*.xls
+*.xlsx
+
+# OS
 .DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Docker
+.dockerignore
+
+# Testing
+.coverage
+.pytest_cache/
+
+# Custom
+tmp/
+temp/
+*.tmp

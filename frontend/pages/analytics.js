@@ -18,6 +18,13 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
+// Import new chart components
+import { DistributionChart } from '../components/charts/DistributionChart';
+import { PlanetCharacteristicsChart } from '../components/charts/PlanetCharacteristicsChart';
+import { ConfidenceAnalysisChart } from '../components/charts/ConfidenceAnalysisChart';
+import { AdvancedMetrics } from '../components/charts/AdvancedMetrics';
+import { HeatmapChart } from '../components/charts/HeatmapChart';
+
 // Prediction card component with animation
 function PredictionCard({ prediction, index, total }) {
   const getIcon = () => {
@@ -356,6 +363,50 @@ export default function Analytics() {
         <section className="py-12">
           <div className="container mx-auto px-4 max-w-7xl">
             <SummaryStats summary={summary} total={total_samples} />
+          </div>
+        </section>
+
+        {/* Advanced Analytics */}
+        <section className="py-12 bg-muted/20">
+          <div className="container mx-auto px-4 max-w-7xl">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold mb-2">Advanced Analytics</h2>
+              <p className="text-muted-foreground">
+                Comprehensive analysis of KOI data with interactive visualizations
+              </p>
+            </div>
+
+            <div className="space-y-8">
+              {/* Advanced Metrics */}
+              <AdvancedMetrics 
+                data={predictions.original_data || []} 
+                predictions={predictionList} 
+              />
+
+              {/* Distribution and Characteristics */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <DistributionChart 
+                  data={predictionList}
+                  title="Classification Distribution"
+                />
+                <PlanetCharacteristicsChart 
+                  data={predictions.original_data || []}
+                  title="Planet Characteristics"
+                />
+              </div>
+
+              {/* Confidence Analysis */}
+              <ConfidenceAnalysisChart 
+                data={predictionList}
+                title="Model Confidence Analysis"
+              />
+
+              {/* Heatmap */}
+              <HeatmapChart 
+                data={predictions.original_data || []}
+                title="Discovery Heatmap: Period vs Radius"
+              />
+            </div>
           </div>
         </section>
 
