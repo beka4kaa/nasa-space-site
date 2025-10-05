@@ -199,35 +199,34 @@ async def validate_dataset(file: UploadFile = File(...)):
                 detail="Uploaded file is empty. Please upload a valid CSV/XLS/XLSX file with KOI data."
             )
         
-        # Try to read file with multiple approaches
+        # Try to read file with multiple approaches - smart format detection
         df = None
         file_errors = []
         
-        # Try CSV first (most common and faster)
-        if file.filename.lower().endswith('.csv'):
-            try:
-                detected = chardet.detect(content)
-                encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
-                # Try reading CSV with comment handling for NASA data files
-                try:
-                    df = pd.read_csv(io.BytesIO(content), encoding=encoding, comment='#')
-                except:
-                    # Fallback to regular CSV reading
-                    df = pd.read_csv(io.BytesIO(content), encoding=encoding)
-            except Exception as e:
-                file_errors.append(f"CSV parsing error: {str(e)}")
+        # First, try to detect format by content, not just extension
+        detected = chardet.detect(content)
+        encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
         
-        # Try Excel formats
-        if df is None and (file.filename.lower().endswith('.xlsx') or file.filename.lower().endswith('.xls')):
-            # Try different Excel engines
-            engines = ['openpyxl', 'xlrd'] if file.filename.lower().endswith('.xlsx') else ['xlrd', 'openpyxl']
-            
-            for engine in engines:
+        # Try CSV parsing first (works for most data files regardless of extension)
+        try:
+            # Try reading CSV with comment handling for NASA data files
+            try:
+                df = pd.read_csv(io.BytesIO(content), encoding=encoding, comment='#')
+            except:
+                # Fallback to regular CSV reading
+                df = pd.read_csv(io.BytesIO(content), encoding=encoding)
+        except Exception as e:
+            file_errors.append(f"CSV parsing attempt: {str(e)}")
+        
+        # If CSV failed, try Excel formats
+        if df is None:
+            # Try different Excel engines regardless of extension
+            for engine in ['openpyxl', 'xlrd']:
                 try:
                     df = pd.read_excel(io.BytesIO(content), engine=engine)
                     break
                 except Exception as e:
-                    file_errors.append(f"Excel parsing error ({engine}): {str(e)}")
+                    file_errors.append(f"Excel parsing attempt ({engine}): {str(e)}")
         
         # If all parsing attempts failed
         if df is None:
@@ -295,34 +294,34 @@ async def predict_dataset(file: UploadFile = File(...)):
                 detail="Uploaded file is empty. Please upload a valid CSV/XLS/XLSX file with KOI data."
             )
         
-        # Try to read file with multiple approaches
+        # Try to read file with multiple approaches - smart format detection
         df = None
         file_errors = []
         
-        # Try CSV first (most common and faster)
-        if file.filename.lower().endswith('.csv'):
-            try:
-                detected = chardet.detect(content)
-                encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
-                # Try reading CSV with comment handling for NASA data files
-                try:
-                    df = pd.read_csv(io.BytesIO(content), encoding=encoding, comment='#')
-                except:
-                    # Fallback to regular CSV reading
-                    df = pd.read_csv(io.BytesIO(content), encoding=encoding)
-            except Exception as e:
-                file_errors.append(f"CSV parsing error: {str(e)}")
+        # First, try to detect format by content, not just extension
+        detected = chardet.detect(content)
+        encoding = detected['encoding'] if detected['encoding'] else 'utf-8'
         
-        # Try Excel formats
-        if df is None and (file.filename.lower().endswith('.xlsx') or file.filename.lower().endswith('.xls')):
-            engines = ['openpyxl', 'xlrd'] if file.filename.lower().endswith('.xlsx') else ['xlrd', 'openpyxl']
-            
-            for engine in engines:
+        # Try CSV parsing first (works for most data files regardless of extension)
+        try:
+            # Try reading CSV with comment handling for NASA data files
+            try:
+                df = pd.read_csv(io.BytesIO(content), encoding=encoding, comment='#')
+            except:
+                # Fallback to regular CSV reading
+                df = pd.read_csv(io.BytesIO(content), encoding=encoding)
+        except Exception as e:
+            file_errors.append(f"CSV parsing attempt: {str(e)}")
+        
+        # If CSV failed, try Excel formats
+        if df is None:
+            # Try different Excel engines regardless of extension
+            for engine in ['openpyxl', 'xlrd']:
                 try:
                     df = pd.read_excel(io.BytesIO(content), engine=engine)
                     break
                 except Exception as e:
-                    file_errors.append(f"Excel parsing error ({engine}): {str(e)}")
+                    file_errors.append(f"Excel parsing attempt ({engine}): {str(e)}")
         
         # If all parsing attempts failed
         if df is None:
