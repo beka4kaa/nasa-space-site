@@ -6,22 +6,63 @@ from fastapi.responses import StreamingResponse
 import pandas as pd
 import io
 import chardet
-from typing import Dict, Any
+from typing import Dict, Any, List
 from pydantic import BaseModel
 from model_utils_working import get_model, KOIModelPredictor
+from dotenv import load_dotenv
+import json
 
-app = FastAPI()
+# Load environment variables
+load_dotenv()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+# Configuration from environment
+HOST = os.getenv("HOST", "0.0.0.0")
+PORT = int(os.getenv("PORT", "8001"))
+DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+API_PREFIX = os.getenv("API_PREFIX", "/api/v1")
+API_TITLE = os.getenv("API_TITLE", "NASA KOI Portal API")
+API_VERSION = os.getenv("API_VERSION", "1.0.0")
+API_DESCRIPTION = os.getenv("API_DESCRIPTION", "NASA Kepler Objects of Interest Analysis Portal")
+
+# CORS settings
+try:
+    CORS_ORIGINS = json.loads(os.getenv("CORS_ORIGINS", '["http://localhost:3000"]'))
+except:
+    CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+# File settings
+MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", "104857600"))  # 100MB
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
+ALLOWED_EXTENSIONS = json.loads(os.getenv("ALLOWED_EXTENSIONS", '["csv", "xls", "xlsx"]'))
+
+# Create FastAPI app
+app = FastAPI(
+    title=API_TITLE,
+    version=API_VERSION,
+    description=API_DESCRIPTION,
+    debug=DEBUG
 )
 
-UPLOAD_DIR = "uploads"
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=os.getenv("CORS_CREDENTIALS", "True").lower() == "true",
+    allow_methods=json.loads(os.getenv("CORS_METHODS", '["*"]')),
+    allow_headers=json.loads(os.getenv("CORS_HEADERS", '["*"]')),
+)
+
+# Ensure upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Global model instance
+model_predictor = None
+
+def get_predictor():
+    global model_predictor
+    if model_predictor is None:
+        model_predictor = get_model()
+    return model_predictor
 
 @app.get("/ping")
 def ping():

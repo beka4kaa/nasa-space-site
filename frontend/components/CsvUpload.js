@@ -6,6 +6,7 @@ import { Upload, FileText, Loader2, AlertCircle, CheckCircle2, BarChart3, Activi
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import ModernCsvTable from './ModernCsvTable';
+import { API_ENDPOINTS, FILE_UPLOAD_CONFIG, apiUtils } from '../lib/api';
 
 export default function CsvUpload() {
   const router = useRouter();
@@ -27,8 +28,15 @@ export default function CsvUpload() {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-      setError('');
+      try {
+        const selectedFile = e.target.files[0];
+        apiUtils.validateFile(selectedFile);
+        setFile(selectedFile);
+        setError('');
+      } catch (err) {
+        setError(err.message);
+        setFile(null);
+      }
     }
   };
 
@@ -56,9 +64,7 @@ export default function CsvUpload() {
       // Валидация датасета перед предсказанием
       setLoadingMessage('Validating dataset structure...');
       try {
-        await axios.post('http://localhost:8001/api/koi/validate-dataset', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        await axios.post(API_ENDPOINTS.validateDataset, formData, FILE_UPLOAD_CONFIG);
       } catch (validationErr) {
         throw {
           response: {
@@ -73,12 +79,12 @@ export default function CsvUpload() {
       
       // Теперь отправляем на endpoint предсказаний
       setLoadingMessage('Running AI model predictions...');
-      const predictRes = await axios.post('http://localhost:8001/api/koi/predict', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const predictRes = await axios.post(API_ENDPOINTS.predict, formData, FILE_UPLOAD_CONFIG);
       
-      // Сохраняем результаты в sessionStorage
-      sessionStorage.setItem('predictions', JSON.stringify(predictRes.data));
+            // Format and store predictions for analytics
+      const formattedData = apiUtils.formatPredictionData(predictRes.data);
+      sessionStorage.setItem('predictions', JSON.stringify(formattedData));
+      sessionStorage.setItem('filename', filename);
       
       // Небольшая задержка для красоты
       setLoadingMessage('Preparing analytics...');
@@ -113,7 +119,7 @@ export default function CsvUpload() {
   const handleDownload = () => {
     if (!filename) return;
     axios({
-      url: `http://localhost:8001/download/${filename}`,
+      url: API_ENDPOINTS.download(filename),
       method: 'GET',
       responseType: 'blob',
     }).then((res) => {
