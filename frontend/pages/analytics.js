@@ -3,7 +3,6 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/Header';
-import { ThemeProvider } from '../hooks/useTheme';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -81,7 +80,7 @@ function PredictionCard({ prediction, index, total, probabilities = null }) {
             <div className="text-right">
               <div className="text-lg font-bold">
                 {probabilities && probabilities[index] ? 
-                  (Math.max(...probabilities[index]) * 100).toFixed(1) : '85.0'}%
+                  (Math.max(...probabilities[index]) * 100).toFixed(1) : '—'}%
               </div>
               <div className="text-xs text-muted-foreground">confidence</div>
             </div>
@@ -269,7 +268,7 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <ThemeProvider>
+      <>
         <Head>
           <title>Loading Analytics - NASA Explorer</title>
         </Head>
@@ -292,13 +291,13 @@ export default function Analytics() {
             </motion.div>
           </div>
         </div>
-      </ThemeProvider>
+      </>
     );
   }
 
   if (error || !predictions) {
     return (
-      <ThemeProvider>
+      <>
         <Head>
           <title>Analytics Error - NASA Explorer</title>
         </Head>
@@ -321,7 +320,7 @@ export default function Analytics() {
             </Card>
           </div>
         </div>
-      </ThemeProvider>
+      </>
     );
   }
 
@@ -337,8 +336,12 @@ export default function Analytics() {
     return acc;
   }, {});
 
+  // Extract original_data from the prediction response.
+  // The new API includes original_data directly in the response.
+  const originalData = predictionData?.original_data || [];
+
   return (
-    <ThemeProvider>
+    <>
       <Head>
         <title>Analytics Dashboard - NASA Explorer</title>
         <meta name="description" content="KOI prediction analytics and results" />
@@ -402,7 +405,7 @@ export default function Analytics() {
             <div className="space-y-8">
               {/* Advanced Metrics */}
               <AdvancedMetrics 
-                data={predictions.original_data || []} 
+                data={originalData} 
                 predictions={predictionList} 
               />
 
@@ -413,7 +416,7 @@ export default function Analytics() {
                   title="Classification Distribution"
                 />
                 <PlanetCharacteristicsChart 
-                  data={predictions.original_data || []}
+                  data={originalData}
                   title="Planet Characteristics"
                 />
               </div>
@@ -426,7 +429,7 @@ export default function Analytics() {
 
               {/* Heatmap */}
               <HeatmapChart 
-                data={predictions.original_data || []}
+                data={originalData}
                 title="Discovery Heatmap: Period vs Radius"
               />
             </div>
@@ -541,6 +544,6 @@ export default function Analytics() {
           </div>
         </section>
       </div>
-    </ThemeProvider>
+    </>
   );
 }

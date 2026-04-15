@@ -2,10 +2,8 @@ import * as React from 'react';
 import Head from 'next/head';
 import Header from '../components/Header';
 import CsvUpload from '../components/CsvUpload';
-import KoiUpload from '../components/KoiUpload';
 import Instructions from '../components/Instructions';
 import Galaxy from '../components/Galaxy';
-import { ThemeProvider, useTheme } from '../hooks/useTheme';
 import { Rocket, BarChart3, Telescope, Microscope } from 'lucide-react';
 
 function HomeContent() {
@@ -100,13 +98,6 @@ function HomeContent() {
         {/* Instructions Section */}
         <Instructions />
         
-        {/* KOI Light Curves Section */}
-        <section className="py-16 bg-muted/30">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <KoiUpload />
-          </div>
-        </section>
-        
         {/* General Data Upload Section */}
         <section className="py-16">
           <div className="container mx-auto px-4 max-w-6xl">
@@ -128,13 +119,12 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <ThemeProvider>
+    <>
       <Head>
         <title>NASA Explorer - Discover the Cosmos</title>
         <meta name="description" content="Advanced astronomical data analysis platform for NASA Hackathon" />
-        <meta name="viewport" content="initial-scale=1, width=device-width" />
       </Head>
       <HomeContent />
-    </ThemeProvider>
+    </>
   );
 }

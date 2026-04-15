@@ -27,7 +27,9 @@ export const API_ENDPOINTS = {
   validateDataset: `${API_BASE_URL}/api/kepler/validate-dataset`,
   predict: `${API_BASE_URL}/api/kepler/predict`,
   predictPaginated: `${API_BASE_URL}/api/kepler/predict-paginated`,
-  modelInfo: `${API_BASE_URL}/api/kepler/model-info`,
+  predictSingle: `${API_BASE_URL}/api/kepler/predict-single`,
+  modelInfo: `${API_BASE_URL}/api/kepler/info`,
+  sampleDataset: `${API_BASE_URL}/api/kepler/dataset/sample`,
 };
 
 // Default axios configuration
@@ -112,6 +114,7 @@ export const apiUtils = {
         probabilities: rawData.probabilities || [],
         summary: rawData.summary || {},
         metadata: rawData.metadata || {},
+        original_data: rawData.original_data || [],
         total: rawData.predictions.length
       };
     }
